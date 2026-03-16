@@ -172,3 +172,76 @@ To also delete the database:
 ```bash
 docker compose down -v
 ```
+
+## Deploying to Production
+
+Below is a rough guide for getting this running on an EC2 instance behind Cloudflare. This is not the only way to do it, but it is straightforward and cheap.
+
+### Database Persistence
+
+The SQLite database is already stored on a Docker named volume (`backend-data`), which survives container restarts and rebuilds. The data lives at `/app/data/intake.db` inside the container. A `docker compose down` preserves the volume. Only `docker compose down -v` deletes it.
+
+If you want to back up the database, you can copy it out of the container:
+
+```bash
+docker cp demo-backend-1:/app/data/intake.db ./backup_intake.db
+```
+
+For a production deployment with heavier traffic, consider migrating from SQLite to PostgreSQL. SQLite works well for single-server setups but does not handle concurrent writes from multiple workers.
+
+### EC2 Setup
+
+1. Launch an EC2 instance. A `t3.micro` or `t3.small` is enough for low traffic. Use Ubuntu 22.04 or Amazon Linux 2023.
+
+2. Install Docker and Docker Compose:
+   ```bash
+   # Ubuntu
+   sudo apt update && sudo apt install -y docker.io docker-compose-v2
+   sudo usermod -aG docker $USER
+   # Log out and back in for the group change to take effect
+   ```
+
+3. Clone the repo and set up the environment:
+   ```bash
+   git clone https://github.com/hernantech/tow_app_monorepo.git
+   cd tow_app_monorepo
+   cp backend/.env.example backend/.env
+   # Edit backend/.env with your real keys
+   ```
+
+4. Start the backend:
+   ```bash
+   docker compose up -d --build
+   ```
+
+5. Open port 5001 (or whichever port you use) in your EC2 security group. If you are putting Cloudflare in front, you only need to allow traffic from Cloudflare's IP ranges.
+
+### Cloudflare Setup
+
+Cloudflare sits between your users and your EC2 instance. It gives you HTTPS, DDoS protection, and caching for free.
+
+1. Add your domain to Cloudflare and point your DNS to your EC2 instance's public IP. Create an A record (e.g., `api.yourdomain.com`) pointing to the EC2 IP with the orange cloud (proxied) enabled.
+
+2. In Cloudflare's SSL/TLS settings, set the mode to "Full" (not "Full (strict)" unless you also install a cert on EC2).
+
+3. On EC2, update your docker-compose port mapping to `80:5000` so Cloudflare can reach it over HTTP on the backend side:
+   ```yaml
+   ports:
+     - "80:5000"
+   ```
+
+4. Update `baseUrl` in the Flutter app's `api_service.dart` to point to your Cloudflare domain:
+   ```dart
+   static const String baseUrl = 'https://api.yourdomain.com';
+   ```
+
+5. If you want to lock down the EC2 instance so only Cloudflare can reach it, restrict your security group's inbound rules to Cloudflare's published IP ranges: https://www.cloudflare.com/ips/
+
+### References
+
+- EC2 getting started: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EC2_GetStarted.html
+- Install Docker on Ubuntu: https://docs.docker.com/engine/install/ubuntu/
+- Cloudflare setup guide: https://developers.cloudflare.com/fundamentals/setup/
+- Cloudflare SSL modes: https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/
+- Cloudflare IP ranges (for security group lockdown): https://www.cloudflare.com/ips/
+- Docker volumes (how persistence works): https://docs.docker.com/engine/storage/volumes/
