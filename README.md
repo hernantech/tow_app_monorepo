@@ -152,6 +152,15 @@ See `backend/.env.example` for the full list. Required variables:
 
 The WeChat variables (`WECHAT_APP_ID`, `WECHAT_APP_SECRET`, `WECHAT_TOKEN`) are only needed if you are connecting a real WeChat Official Account.
 
+## Cost Note
+
+The AI agent uses Claude Sonnet by default (`claude-sonnet-4-20250514` in `backend/app/services/llm_service.py`). For a production deployment where you want to keep costs low, consider switching to a cheaper model. The intake task (classifying intent, extracting fields, generating short responses) does not require a frontier model. Good alternatives:
+
+- **Claude Haiku** (`claude-haiku-4-5-20251001`) -- roughly 10x cheaper than Sonnet, fast, and more than capable for structured data extraction
+- **OpenAI GPT-4o-mini** -- similar price point to Haiku, would require swapping `langchain-anthropic` for `langchain-openai` in requirements and updating the `LLMService` class
+
+To change the model, edit the `model` parameter in `LLMService.__init__` in `backend/app/services/llm_service.py`.
+
 ## Stopping the Backend
 
 ```bash

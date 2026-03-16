@@ -4,6 +4,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
   static const String baseUrl = 'http://localhost:5001';
+  // This is a shared secret between the app and backend, not a user credential.
+  // It prevents unauthenticated callers from hitting the AI endpoint directly.
+  // It is expected to be in the app binary — this is the standard approach for
+  // mobile API keys. The actual LLM key (Anthropic) stays server-side only.
+  // Must match the CHAT_API_KEY value in backend/.env.
   static const String _chatApiKey = 'y3x_3x-lzghfsIHvPon1q5EONwHe6ZM09zwUHR5IDao';
   static const _storage = FlutterSecureStorage();
 
