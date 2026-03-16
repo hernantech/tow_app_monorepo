@@ -1,0 +1,122 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+class ApiService {
+  static const String baseUrl = 'http://localhost:5001';
+  static const _storage = FlutterSecureStorage();
+
+  static Future<String?> getToken() async {
+    return await _storage.read(key: 'access_token');
+  }
+
+  static Future<void> saveToken(String token) async {
+    await _storage.write(key: 'access_token', value: token);
+  }
+
+  static Future<void> clearToken() async {
+    await _storage.delete(key: 'access_token');
+  }
+
+  static Future<Map<String, String>> _authHeaders() async {
+    final token = await getToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  static Future<Map<String, dynamic>> login(String username, String password) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'username': username, 'password': password}),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      await saveToken(data['access_token']);
+      return data;
+    }
+    throw Exception(jsonDecode(response.body)['error'] ?? 'Login failed');
+  }
+
+  static Future<Map<String, dynamic>> getMe() async {
+    final headers = await _authHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/auth/me'),
+      headers: headers,
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Not authenticated');
+  }
+
+  static Future<List<dynamic>> getCases({String? status, int limit = 50, int offset = 0}) async {
+    final headers = await _authHeaders();
+    final params = <String, String>{
+      'limit': limit.toString(),
+      'offset': offset.toString(),
+    };
+    if (status != null) params['status'] = status;
+    final uri = Uri.parse('$baseUrl/api/cases/').replace(queryParameters: params);
+    final response = await http.get(uri, headers: headers);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body)['cases'];
+    }
+    throw Exception('Failed to load cases');
+  }
+
+  static Future<Map<String, dynamic>> getCase(int id) async {
+    final headers = await _authHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/cases/$id'),
+      headers: headers,
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Case not found');
+  }
+
+  static Future<Map<String, dynamic>> updateCase(int id, Map<String, dynamic> updates) async {
+    final headers = await _authHeaders();
+    final response = await http.patch(
+      Uri.parse('$baseUrl/api/cases/$id'),
+      headers: headers,
+      body: jsonEncode(updates),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Failed to update case');
+  }
+
+  static Future<Map<String, dynamic>> addNote(int id, String note) async {
+    final headers = await _authHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/cases/$id/notes'),
+      headers: headers,
+      body: jsonEncode({'note': note}),
+    );
+    if (response.statusCode == 201) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Failed to add note');
+  }
+
+  static Future<Map<String, dynamic>> sendChatMessage(String message, {String? userId}) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/chat'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'message': message,
+        if (userId != null) 'user_id': userId,
+      }),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Failed to send message');
+  }
+}

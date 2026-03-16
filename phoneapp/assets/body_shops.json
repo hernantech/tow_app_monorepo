@@ -1,0 +1,130 @@
+[
+  {
+    "id": "1",
+    "name": "Picasso Auto Body",
+    "address": "7400 Orangewood Dr, Riverside, CA 92504",
+    "lat": 33.9350,
+    "lng": -117.4100,
+    "isPartner": true
+  },
+  {
+    "id": "2",
+    "name": "Fix Auto Riverside",
+    "address": "8000 Auto Dr, Riverside, CA 92504",
+    "lat": 33.9310,
+    "lng": -117.4050,
+    "isPartner": false
+  },
+  {
+    "id": "3",
+    "name": "Gerber Collision & Glass",
+    "address": "2523 Main St, Riverside, CA",
+    "lat": 33.9740,
+    "lng": -117.3710,
+    "isPartner": true
+  },
+  {
+    "id": "4",
+    "name": "Caliber Collision",
+    "address": "2910 14th St, Riverside, CA 92507",
+    "lat": 33.9680,
+    "lng": -117.3650,
+    "isPartner": false
+  },
+  {
+    "id": "5",
+    "name": "Certified Collision Center",
+    "address": "3040 Adams St, Riverside, CA 92504",
+    "lat": 33.9400,
+    "lng": -117.3900,
+    "isPartner": true
+  },
+  {
+    "id": "6",
+    "name": "Riverside Collision Center",
+    "address": "2805 Main St, Riverside, CA",
+    "lat": 33.9720,
+    "lng": -117.3720,
+    "isPartner": false
+  },
+  {
+    "id": "7",
+    "name": "Royal Collision",
+    "address": "1260 Dodson Way, Riverside, CA 92507",
+    "lat": 33.9590,
+    "lng": -117.3500,
+    "isPartner": false
+  },
+  {
+    "id": "8",
+    "name": "Woodcrest Collision Center",
+    "address": "16045 Wood Rd, Riverside, CA 92508",
+    "lat": 33.9100,
+    "lng": -117.3300,
+    "isPartner": true
+  },
+  {
+    "id": "9",
+    "name": "Kaizen Collision Center",
+    "address": "7590 Cypress Ave, Riverside, CA 92503",
+    "lat": 33.9280,
+    "lng": -117.4200,
+    "isPartner": false
+  },
+  {
+    "id": "10",
+    "name": "Seidner's Collision Centers",
+    "address": "7590 Indiana Ave, Riverside, CA 92504",
+    "lat": 33.9350,
+    "lng": -117.3950,
+    "isPartner": true
+  },
+  {
+    "id": "11",
+    "name": "Inland Empire Autobody & Paint",
+    "address": "6411 Industrial Ave Ste A, Riverside, CA 92504",
+    "lat": 33.9380,
+    "lng": -117.4000,
+    "isPartner": false
+  },
+  {
+    "id": "12",
+    "name": "European Automotive Collision",
+    "address": "6191 Jurupa Ave, Riverside, CA 92504",
+    "lat": 33.9620,
+    "lng": -117.4150,
+    "isPartner": false
+  },
+  {
+    "id": "13",
+    "name": "Auto Collision Center",
+    "address": "12697 Magnolia Ave, Riverside, CA 92503",
+    "lat": 33.9200,
+    "lng": -117.4350,
+    "isPartner": true
+  },
+  {
+    "id": "14",
+    "name": "Moss Bros. Collision",
+    "address": "8151 Auto Dr, Riverside, CA 92504",
+    "lat": 33.9300,
+    "lng": -117.4060,
+    "isPartner": false
+  },
+  {
+    "id": "15",
+    "name": "Charlie's Auto Body & Alignment",
+    "address": "4811 Van Buren Blvd, Riverside, CA 92503",
+    "lat": 33.9350,
+    "lng": -117.4300,
+    "isPartner": false
+  },
+  {
+    "id": "16",
+    "name": "V & G Auto Body",
+    "address": "12510 Magnolia Ave, Riverside, CA 92503",
+    "lat": 33.9210,
+    "lng": -117.4340,
+    "isPartner": true
+  }
+]
