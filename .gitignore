@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+**/.env
+.env
+*.egg-info/
+
+# SQLite
+*.db
+*.sqlite3
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+*.swp
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+phoneapp/build/
+phoneapp/android/app/debug
+phoneapp/android/app/profile
+phoneapp/android/app/release
+app.*.symbols
+app.*.map.json
+
+# Misc
+*.class
+*.log
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
