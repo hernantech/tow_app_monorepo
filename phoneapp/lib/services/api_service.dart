@@ -4,7 +4,17 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
   static const String baseUrl = 'http://localhost:5001';
+  static const String _chatApiKey = 'y3x_3x-lzghfsIHvPon1q5EONwHe6ZM09zwUHR5IDao';
   static const _storage = FlutterSecureStorage();
+
+  static Future<String> getDeviceId() async {
+    var deviceId = await _storage.read(key: 'device_id');
+    if (deviceId == null) {
+      deviceId = 'dev_${DateTime.now().millisecondsSinceEpoch}_${Object().hashCode}';
+      await _storage.write(key: 'device_id', value: deviceId);
+    }
+    return deviceId;
+  }
 
   static Future<String?> getToken() async {
     return await _storage.read(key: 'access_token');
@@ -106,9 +116,14 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> sendChatMessage(String message, {String? userId}) async {
+    final deviceId = await getDeviceId();
     final response = await http.post(
       Uri.parse('$baseUrl/api/chat'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': _chatApiKey,
+        'X-Device-ID': deviceId,
+      },
       body: jsonEncode({
         'message': message,
         if (userId != null) 'user_id': userId,
@@ -116,6 +131,10 @@ class ApiService {
     );
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
+    }
+    if (response.statusCode == 429) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Rate limit exceeded');
     }
     throw Exception('Failed to send message');
   }

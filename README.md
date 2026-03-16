@@ -50,12 +50,22 @@ The backend also exposes a WeChat webhook, so the same AI agent can handle conve
 
 ### 1. Start the Backend
 
-Copy the example environment file and add your API key:
+Copy the example environment file and fill in your keys:
 
 ```bash
 cp backend/.env.example backend/.env
-# Edit backend/.env and set ANTHROPIC_API_KEY to your real key
+# Edit backend/.env and set:
+#   ANTHROPIC_API_KEY  — your Anthropic API key (required)
+#   CHAT_API_KEY       — a random secret string (used to authenticate the mobile app)
 ```
+
+You can generate a `CHAT_API_KEY` with:
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Then paste the same key into `phoneapp/lib/services/api_service.dart` as the `_chatApiKey` value so the app can authenticate with the backend.
 
 Build and run with Docker:
 
@@ -106,7 +116,7 @@ flutter test
 
 ## API Endpoints
 
-All endpoints except login and chat require a JWT token in the `Authorization: Bearer <token>` header.
+Operator endpoints require a JWT token in the `Authorization: Bearer <token>` header. The chat endpoint uses a separate API key and device-based rate limiting (see below).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -117,13 +127,30 @@ All endpoints except login and chat require a JWT token in the `Authorization: B
 | GET | `/api/cases/<id>` | Yes | Case detail with messages and notes |
 | PATCH | `/api/cases/<id>` | Yes | Update case fields (status, customer info) |
 | POST | `/api/cases/<id>/notes` | Yes | Add an operator note |
-| POST | `/api/chat` | No | Send a message to the AI agent |
+| POST | `/api/chat` | API Key | Send a message to the AI agent |
 | GET | `/wechat/` | No | WeChat server verification |
 | POST | `/wechat/` | No | WeChat incoming message webhook |
 
+## Rate Limiting
+
+The `/api/chat` endpoint is protected by two mechanisms:
+
+- **API key** -- every request must include an `X-API-Key` header matching the `CHAT_API_KEY` in `.env`. Without it, the request is rejected with 401.
+- **Per-device message limit** -- each device gets a unique ID (generated on first launch and stored on-device). The backend tracks how many messages each device has sent and returns 429 when the limit is reached. The default limit is 75 messages, which is roughly 10 full intake conversations. You can change it with the `CHAT_MSG_LIMIT_PER_DEVICE` environment variable.
+
+The response includes a `remaining_messages` field so the app can show the user how many messages they have left.
+
 ## Environment Variables
 
-See `backend/.env.example` for the full list. The only required variable for local development is `ANTHROPIC_API_KEY`. The WeChat variables are only needed if you are connecting a real WeChat Official Account.
+See `backend/.env.example` for the full list. Required variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `ANTHROPIC_API_KEY` | Claude API key for the AI agent |
+| `CHAT_API_KEY` | Shared secret between the app and backend (must match `_chatApiKey` in `api_service.dart`) |
+| `CHAT_MSG_LIMIT_PER_DEVICE` | Max messages per device (default: 75) |
+
+The WeChat variables (`WECHAT_APP_ID`, `WECHAT_APP_SECRET`, `WECHAT_TOKEN`) are only needed if you are connecting a real WeChat Official Account.
 
 ## Stopping the Backend
 

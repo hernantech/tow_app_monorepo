@@ -14,6 +14,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<_ChatMessage> _messages = [];
   bool _isLoading = false;
   String? _caseStatus;
+  int? _remainingMessages;
   final String _userId = 'app_user_${DateTime.now().millisecondsSinceEpoch}';
 
   @override
@@ -51,12 +52,16 @@ class _ChatScreenState extends State<ChatScreen> {
           isUser: false,
         ));
         _caseStatus = result['status'];
+        _remainingMessages = result['remaining_messages'];
         _isLoading = false;
       });
     } catch (e) {
+      final errorMsg = e.toString().replaceFirst('Exception: ', '');
       setState(() {
         _messages.add(_ChatMessage(
-          text: 'Connection error. Make sure the backend is running.',
+          text: errorMsg.contains('limit')
+              ? 'You have reached the message limit for this device. Please contact support for assistance.'
+              : 'Connection error. Make sure the backend is running.',
           isUser: false,
           isError: true,
         ));
@@ -85,6 +90,20 @@ class _ChatScreenState extends State<ChatScreen> {
         title: const Text('AI Intake Assistant'),
         centerTitle: true,
         actions: [
+          if (_remainingMessages != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Chip(
+                label: Text(
+                  '$_remainingMessages left',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: _remainingMessages! < 10 ? Colors.red[800] : Colors.grey[700],
+                  ),
+                ),
+                backgroundColor: _remainingMessages! < 10 ? Colors.red[50] : Colors.grey[100],
+              ),
+            ),
           if (_caseStatus != null)
             Padding(
               padding: const EdgeInsets.only(right: 12),
@@ -92,7 +111,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 label: Text(
                   _caseStatus == 'pending_review' ? 'Complete' : 'In Progress',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: _caseStatus == 'pending_review'
                         ? Colors.green[800]
                         : Colors.orange[800],

@@ -1,9 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import case as case_dao
 from app.models import message as message_dao
 from app.models import case_note as case_note_dao
 from app.workflow.runner import process_incoming_message
+from app.database import get_db
 
 cases_bp = Blueprint('cases', __name__)
 
@@ -86,24 +87,72 @@ def add_note(case_id):
     return jsonify(case_note_dao.to_dict(note)), 201
 
 
+def _check_device_limit(device_id):
+    """Check message count for device. Returns (allowed, count, limit)."""
+    limit = current_app.config.get('CHAT_MSG_LIMIT_PER_DEVICE', 75)
+    with get_db() as db:
+        row = db.execute(
+            "SELECT message_count FROM device_usage WHERE device_id = ?",
+            (device_id,)
+        ).fetchone()
+        count = row['message_count'] if row else 0
+    return count < limit, count, limit
+
+
+def _increment_device_count(device_id):
+    """Increment message count for a device, creating the row if needed."""
+    with get_db() as db:
+        db.execute("""
+            INSERT INTO device_usage (device_id, message_count, first_seen, last_seen)
+            VALUES (?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ON CONFLICT(device_id) DO UPDATE SET
+                message_count = message_count + 1,
+                last_seen = CURRENT_TIMESTAMP
+        """, (device_id,))
+
+
 @cases_bp.route('/api/chat', methods=['POST'])
 def chat():
-    """Send a message to the AI intake agent. No auth required (simulates WeChat user)."""
+    """Send a message to the AI intake agent. Requires API key and device ID."""
+    # Validate API key
+    expected_key = current_app.config.get('CHAT_API_KEY', '')
+    provided_key = request.headers.get('X-API-Key', '')
+    if not expected_key or provided_key != expected_key:
+        return jsonify({'error': 'Invalid or missing API key'}), 401
+
+    # Validate device ID
+    device_id = request.headers.get('X-Device-ID', '')
+    if not device_id:
+        return jsonify({'error': 'Device ID is required'}), 400
+
+    # Check rate limit
+    allowed, count, limit = _check_device_limit(device_id)
+    if not allowed:
+        return jsonify({
+            'error': 'Message limit reached for this device',
+            'used': count,
+            'limit': limit,
+        }), 429
+
     data = request.get_json()
     if not data or not data.get('message'):
         return jsonify({'error': 'Message is required'}), 400
 
-    user_id = data.get('user_id', 'app_user_default')
+    user_id = data.get('user_id', device_id)
     message_text = data['message']
 
     try:
         response_text = process_incoming_message(user_id, message_text)
-        # Find the active case for this user to return case_id
+        _increment_device_count(device_id)
         active_case = case_dao.get_active_by_wechat_user(user_id)
+
+        # Return remaining count so the app can show it
+        remaining = limit - (count + 1)
         return jsonify({
             'response': response_text,
             'case_id': active_case.id if active_case else None,
             'status': active_case.status if active_case else None,
+            'remaining_messages': remaining,
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500

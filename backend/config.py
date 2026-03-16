@@ -10,9 +10,13 @@ class Config:
     WECHAT_TOKEN = os.getenv('WECHAT_TOKEN', 'default_token')
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'dev-secret-key')
     DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///intake.db')
+    CHAT_API_KEY = os.getenv('CHAT_API_KEY', '')
+    CHAT_MSG_LIMIT_PER_DEVICE = int(os.getenv('CHAT_MSG_LIMIT_PER_DEVICE', '75'))
 
 class TestConfig(Config):
     TESTING = True
     DATABASE_URL = 'sqlite:///:memory:'
     JWT_SECRET_KEY = 'test-secret-key'
     WECHAT_TOKEN = 'test_token'
+    CHAT_API_KEY = 'test-chat-key'
+    CHAT_MSG_LIMIT_PER_DEVICE = 75
